@@ -1,10 +1,12 @@
 import pygame, pygame.locals, sys, time
 from clss import *
 from random import randint
+import accel
 
-SIZE = WIDTH, LENGTH = (1000, 1000)
+SIZE = WIDTH, LENGTH = (1400, 1000)
 BACKGROUND = (0,0,0)
 FORGROUND = (0,255,25)
+MIDGROUND = (0,127,12)
 
 pygame.init()
 screen = pygame.display.set_mode(SIZE)
@@ -16,51 +18,84 @@ def render_points(points):
     for point in points:
         pos, size = point.get()
         pygame.draw.circle(screen, FORGROUND, pos, size)
-    pygame.display.flip()
+    #pygame.display.flip()
 
 def render_lines(lines):
     for line in lines:
         p1, p2 = line.get()
         pygame.draw.line(screen, FORGROUND, p1, p2, 1)
-    pygame.display.flip()
 
 def render_polys(polys):
     lookup = {True:0, False:1}
+    polys = sorted(polys, key=lambda x:x.depth(), reverse=True )
     for poly in polys:
         pts, fill = poly.get()
-        pygame.draw.polygon(screen, FORGROUND, pts, lookup[fill])
-    pygame.display.flip()
+        if fill:
+            pygame.draw.polygon(screen, MIDGROUND, pts, 0)
+        pygame.draw.polygon(screen, FORGROUND, pts, 1)
+
+def render_solid(solid):
+    polys = solid.getPolys()
+    polys = sorted(polys, key=lambda x: x.depth(), reverse=True)
+    for poly in polys:
+        pts, fill = poly.get()
+        if fill:
+            pygame.draw.polygon(screen, solid.color_fill, pts, 0)
+        pygame.draw.polygon(screen, solid.color_edge, pts, 1)
 
 if __name__ == "__main__":
-    #points = random2dPoints(SIZE, 10, (1,5))
-    #render_points(points)
-    #lines = random2dLines(SIZE, 10)
-    #render_lines(lines)
-    #polys = randomPoly2d(SIZE, 3, (3,3), (True, False))
-    #render_polys(polys)
 
-    cube = [
-        Poly3d(((250,250,0), (250,750,0), (250, 750, 500), (250, 250, 500))),
-        Poly3d(((250,250,0), (750, 250, 0), (750, 250, 500), (250, 250, 500))),
-        Poly3d(((250, 750, 0), (750, 750, 0), (750, 750, 500), (250, 750, 500))),
-        Poly3d(((750, 250, 0), (750, 750, 0), (750, 750, 500), (750, 250, 500)))
-    ]
-    render_polys(cube)
+    cube = Solid3d([
+        Poly3d(((50,250,0), (50,750,0), (50, 750, 500), (50, 250, 500))),
+        Poly3d(((50,250,0), (550, 250, 0), (550, 250, 500), (50, 250, 500))),
+        Poly3d(((50, 750, 0), (550, 750, 0), (550, 750, 500), (50, 750, 500))),
+        Poly3d(((550, 250, 0), (550, 750, 0), (550, 750, 500), (550, 250, 500))),
+        Poly3d(((50, 250, 0), (550, 250, 0), (550, 750, 0), (50, 750, 0))),
+        Poly3d(((50, 250, 500), (550, 250, 500), (550, 750, 500), (50, 750, 500)))
+    ])
+    cube2 = Solid3d([
+        Poly3d(((50, 250, 0), (50, 750, 0), (50, 750, 500), (50, 250, 500))),
+        Poly3d(((50, 250, 0), (550, 250, 0), (550, 250, 500), (50, 250, 500))),
+        Poly3d(((50, 750, 0), (550, 750, 0), (550, 750, 500), (50, 750, 500))),
+        Poly3d(((550, 250, 0), (550, 750, 0), (550, 750, 500), (550, 250, 500))),
+        Poly3d(((50, 250, 0), (550, 250, 0), (550, 750, 0), (50, 750, 0))),
+        Poly3d(((50, 250, 500), (550, 250, 500), (550, 750, 500), (50, 750, 500)))
+    ])
+    cube2.translate((800,0,0))
+    print(cube2.size())
     tick = time.time()
-    count = 600
+    count = 0
+    rotation = .25, .5, .75
+    rotation2= 0, -1, 1
+    grow = True
     while True:
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
                 pygame.quit()
                 sys.exit()
-        if time.time() > tick + .034:
+        if time.time() > tick + (1/60):
+            #print(1/(time.time() - tick))
             #print(len(cube))
             #print(*cube, sep='\n')
             screen.fill(BACKGROUND)
             tick = time.time()
-            for poly in cube:
-                poly.rotate((500,500,250), .5, -1, -.5)
-            render_polys(cube)
+            render_solid(cube)
+            cube.rotate(cube.center(),rotation)
+            cube2.rotate(cube2.center(), rotation2)
+
+            if cube2.size() > 300:
+                grow = False
+            elif cube2.size() < 200:
+                grow = True
+            if not grow:
+                cube2.scale(cube2.center(), 0.99)
+                cube.translate((-5,-5,-5))
+            else:
+                cube2.scale(cube2.center(), 1.01)
+                cube.translate((5,5,5))
+
+            render_solid(cube2)
+            pygame.display.flip()
             if count < 588:
                 pygame.image.save(screen, f"frames/frame{count:04}.png")
                 count += 1
