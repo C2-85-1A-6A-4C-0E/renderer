@@ -98,7 +98,7 @@ class Poly3d:
         return x,y,z
 
     def depth(self):
-        return distance3d(self.center(), self.camera)
+        return max(distance3d(vertex, self.camera) for vertex in self.points3d)
 
     def rotate(self, origin, xrot, yrot, zrot):
         def rot(origin, point, angle):
@@ -229,6 +229,10 @@ class Solid3d:
 
     def getPolys(self):
         return self.polys
+
+    def export_polys(self, list):
+        for poly in self.polys:
+            list.append(poly)
 
     def translate(self, offset):
         translate_polys(self.polys, offset)
