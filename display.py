@@ -29,10 +29,10 @@ def render_polys(polys):
     lookup = {True:0, False:1}
     polys = sorted(polys, key=lambda x:x.depth(), reverse=True )
     for poly in polys:
-        pts, fill = poly.get()
-        if fill:
-            pygame.draw.polygon(screen, MIDGROUND, pts, 0)
-        pygame.draw.polygon(screen, FORGROUND, pts, 1)
+        pts, edge, fill = poly.get()
+        if fill is not None:
+            pygame.draw.polygon(screen, fill, pts, 0)
+        pygame.draw.polygon(screen, edge, pts, 1)
 
 def render_solid(solid):
     polys = solid.getPolys()
@@ -64,13 +64,17 @@ if __name__ == "__main__":
     #cube2.translate((800,0,0))
     #print(cube2.size())
     raw = loader.load()
+    for solid in raw:
+        solid.setColor(FORGROUND)
+        #solid.setWireframe()
 
 
-    cube = loader.load()[1]
+    cube = raw[0]
+    cube.setColor((0,25,250))
+    raw[2].rotate(cube.center(), (180,0,0))
     tick = time.time()
     count = 600
-    rotation = .25, .5, .75
-    rotation2= 0, -1, 1
+    rotation = 1, 0, 1
     grow = True
     while True:
         for event in pygame.event.get():
@@ -89,7 +93,7 @@ if __name__ == "__main__":
 
             render_polys(polys)
             for solid in raw:
-                solid.rotate(cube.center(), (0,1,1))
+                solid.rotate(cube.center(), rotation)
             #render_solid(cube2)
             #cube.rotate(cube.center(),rotation)
             #cube2.rotate(cube2.center(), rotation2)

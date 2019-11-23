@@ -63,11 +63,20 @@ def randomPoly2d(bounds, count, verts=(3,3), fill=False):
     return poly
 
 class Poly3d:
-    def __init__(self, points, camera=(700,500,-1000)):
+    def __init__(self, points, camera=(700,500,-1000), color=(255,255,255)):
         self.points3d = points
         self.camera = camera
         self.points2d = []
         self.compiled = False
+        self.color_edge = color
+        self.color_fill = tuple([i // 2 for i in color])
+
+    def setColor(self, color):
+        self.color_edge = color
+        self.color_fill = tuple([i // 2 for i in color])
+
+    def setWireframe(self):
+        self.color_fill = None
 
     def compile(self):
         self.points2d = []
@@ -80,7 +89,7 @@ class Poly3d:
     def get(self):
         if not self.compiled:
             self.compile()
-        return self.points2d, True
+        return self.points2d, self.color_edge, self.color_fill
 
     def take(self):
         return self.points3d
@@ -98,7 +107,9 @@ class Poly3d:
         return x,y,z
 
     def depth(self):
-        return max(distance3d(vertex, self.camera) for vertex in self.points3d)
+        #return max(distance3d(vertex, self.camera) for vertex in self.points3d)
+        return distance3d(self.center(), self.camera)
+        #return min(distance3d(vertex, self.camera) for vertex in self.points3d)
 
     def rotate(self, origin, xrot, yrot, zrot):
         def rot(origin, point, angle):
@@ -226,6 +237,14 @@ class Solid3d:
         self.polys = polys
         self.color_edge = color
         self.color_fill = tuple([i//2 for i in color])
+
+    def setColor(self, color):
+        for poly in self.polys:
+            poly.setColor(color)
+
+    def setWireframe(self):
+        for poly in self.polys:
+            poly.setWireframe()
 
     def getPolys(self):
         return self.polys
